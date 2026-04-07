@@ -1,12 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Router, type Request } from "express";
-import {
-  MembershipStatus as Ms,
-  Prisma,
-  type Group,
-  type User as UserRow,
-  type Venue as VenueRow
-} from "@prisma/client";
+import type { Group, Prisma, User as UserRow, Venue as VenueRow } from "@prisma/client";
+import { MembershipStatus as Ms, Prisma as PrismaRt } from "../lib/prisma-cjs-compat.js";
 import {
   type Favorite,
   type PlayRoundRecord,
@@ -863,7 +858,7 @@ apiRouter.post("/favorites/:targetType/:targetId", async (req, res) => {
     };
     return res.status(201).json(item);
   } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+    if (e instanceof PrismaRt.PrismaClientKnownRequestError && e.code === "P2002") {
       const existing = await prisma.favorite.findUnique({
         where: {
           userId_targetType_targetId: { userId, targetType: targetType as never, targetId }
@@ -1266,7 +1261,7 @@ apiRouter.post("/users/:userId/follow", async (req, res) => {
     });
     return res.status(201).json({ ok: true });
   } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+    if (e instanceof PrismaRt.PrismaClientKnownRequestError && e.code === "P2002") {
       return res.json({ ok: true, already: true });
     }
     throw e;

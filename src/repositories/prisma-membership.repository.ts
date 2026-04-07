@@ -1,5 +1,5 @@
-import { Prisma } from "@prisma/client";
-import { MembershipStatus as Ms } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { MembershipStatus as Ms, Prisma as PrismaRt } from "../lib/prisma-cjs-compat.js";
 import { prisma } from "../lib/prisma.js";
 import type {
   GroupRepository,
@@ -70,7 +70,7 @@ export class PrismaMembershipRepository implements MembershipRepository {
       });
       return toRecord(created);
     } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      if (e instanceof PrismaRt.PrismaClientKnownRequestError && e.code === "P2002") {
         throw new Error("Already applied");
       }
       throw e;

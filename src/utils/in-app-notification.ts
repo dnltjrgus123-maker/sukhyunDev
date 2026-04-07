@@ -1,5 +1,4 @@
-import type { NotificationType as DbNotificationType } from "@prisma/client";
-import { Prisma } from "@prisma/client";
+import type { NotificationType as DbNotificationType, Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import type { NotificationType } from "../data/store.js";
 
