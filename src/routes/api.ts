@@ -180,7 +180,7 @@ async function loadGroupWithCount(groupId: string): Promise<GroupWithApprovedCou
     where: { id: groupId },
     include: { _count: { select: { memberships: approvedMembershipCount } } }
   });
-  return g;
+  return g as GroupWithApprovedCount | null;
 }
 
 async function mergeUserAccounts(

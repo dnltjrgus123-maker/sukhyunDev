@@ -1,21 +1,53 @@
 /**
- * @prisma/client는 CJS이며, Prisma 버전에 따라 enum이 PascalCase 또는 snake_case로
- * 내보내질 수 있어 default import 후 두 이름 모두 시도합니다.
+ * @prisma/client는 CJS이며, 버전에 따라 enum export 이름이 PascalCase 또는 snake_case입니다.
+ * default import로 가져온 뒤, Prisma Client 타입과 맞는 리터럴 유니온으로 단언합니다.
  */
 import prismaModule from "@prisma/client";
 
-function pickEnumRecord(pascal: string, snake: string): Record<string, string> {
-  const m = prismaModule as Record<string, Record<string, string> | undefined>;
+/** prisma/schema.prisma 의 MembershipStatus 값 (DB·클라이언트 공통) */
+type MembershipStatusVal = "applied" | "approved" | "rejected" | "expired";
+type SkillLevelVal = "beginner" | "intermediate" | "advanced";
+type UserRoleVal = "member" | "host" | "admin";
+type GroupStatusVal = "recruiting" | "closed";
+
+type MembershipStatusObj = {
+  readonly applied: MembershipStatusVal;
+  readonly approved: MembershipStatusVal;
+  readonly rejected: MembershipStatusVal;
+  readonly expired: MembershipStatusVal;
+};
+type SkillLevelObj = {
+  readonly beginner: SkillLevelVal;
+  readonly intermediate: SkillLevelVal;
+  readonly advanced: SkillLevelVal;
+};
+type UserRoleObj = {
+  readonly member: UserRoleVal;
+  readonly host: UserRoleVal;
+  readonly admin: UserRoleVal;
+};
+type GroupStatusObj = {
+  readonly recruiting: GroupStatusVal;
+  readonly closed: GroupStatusVal;
+};
+
+function pickEnum<E>(pascal: string, snake: string): E {
+  const m = prismaModule as unknown as Record<string, E | undefined>;
   const v = m[pascal] ?? m[snake];
-  if (!v) {
-    throw new Error(`@prisma/client: enum "${pascal}" / "${snake}" 를 찾을 수 없습니다. prisma generate를 실행하세요.`);
+  if (v === undefined) {
+    throw new Error(
+      `@prisma/client: enum "${pascal}" / "${snake}" 을 찾을 수 없습니다. npx prisma generate 후 다시 빌드하세요.`
+    );
   }
   return v;
 }
 
 export const PrismaClient = prismaModule.PrismaClient;
 export const Prisma = prismaModule.Prisma;
-export const MembershipStatus = pickEnumRecord("MembershipStatus", "membership_status");
-export const GroupStatus = pickEnumRecord("GroupStatus", "group_status");
-export const SkillLevel = pickEnumRecord("SkillLevel", "skill_level");
-export const UserRole = pickEnumRecord("UserRole", "user_role");
+
+export const MembershipStatus = pickEnum<MembershipStatusObj>("MembershipStatus", "membership_status");
+export const GroupStatus = pickEnum<GroupStatusObj>("GroupStatus", "group_status");
+export const SkillLevel = pickEnum<SkillLevelObj>("SkillLevel", "skill_level");
+export const UserRole = pickEnum<UserRoleObj>("UserRole", "user_role");
+
+export type { SkillLevelVal };

@@ -3,7 +3,8 @@ import {
   GroupStatus,
   PrismaClient,
   SkillLevel,
-  UserRole
+  UserRole,
+  type SkillLevelVal
 } from "../src/lib/prisma-cjs-compat.js";
 import { SEED_UUID } from "../src/constants/dev-seed-ids.js";
 
@@ -38,7 +39,7 @@ async function main() {
     email: string | null;
     nickname: string;
     photoUrl: string | null;
-    skill: SkillLevel;
+    skill: SkillLevelVal;
   }> = [
     {
       id: u.member1,
