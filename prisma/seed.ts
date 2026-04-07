@@ -1,5 +1,10 @@
 import "dotenv/config";
-import { GroupStatus, PrismaClient, SkillLevel, UserRole } from "@prisma/client";
+import {
+  GroupStatus,
+  PrismaClient,
+  SkillLevel,
+  UserRole
+} from "../src/lib/prisma-cjs-compat.js";
 import { SEED_UUID } from "../src/constants/dev-seed-ids.js";
 
 const prisma = new PrismaClient();
