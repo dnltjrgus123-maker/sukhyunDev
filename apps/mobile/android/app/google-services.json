@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "444600862211",
+    "project_id": "my-badminton-project-7b8ae",
+    "storage_bucket": "my-badminton-project-7b8ae.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:444600862211:android:ce2f0e52494a9b835a3036",
+        "android_client_info": {
+          "package_name": "com.bdminton.meet.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4QOihoZ1KZ2aD32G7lkw4H6GAABvne9U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

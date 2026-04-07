@@ -1,0 +1,41 @@
+{
+  "name": "my-badminton-project",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/server.js",
+    "openapi:types": "openapi-typescript ./docs/api/openapi.yaml -o ./src/generated/api-types.ts",
+    "openapi:mock": "prism mock ./docs/api/openapi.yaml -p 4010",
+    "db:migrate:dev": "prisma migrate dev --name init",
+    "db:generate": "prisma generate",
+    "db:seed:sql": "node ./scripts/apply-schema-sql.mjs",
+    "db:seed": "tsx prisma/seed.ts",
+    "test:supabase": "node scripts/supabase-smoke.mjs"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.7.0",
+    "@supabase/supabase-js": "^2.101.1",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "express-async-errors": "^3.1.1",
+    "firebase-admin": "^13.7.0",
+    "jose": "^6.2.2",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/express-serve-static-core": "^4.19.8",
+    "@types/node": "^22.14.1",
+    "openapi-typescript": "^7.5.2",
+    "prism-cli": "^0.5.3",
+    "prisma": "^6.7.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}

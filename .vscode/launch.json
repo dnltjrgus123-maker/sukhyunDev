@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter: dart_defines.json (권장)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "apps/mobile",
+      "toolArgs": ["--dart-define-from-file=dart_defines.json"]
+    },
+    {
+      "name": "Flutter: 환경변수 SUPABASE_*",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "apps/mobile",
+      "toolArgs": [
+        "--dart-define=SUPABASE_URL=${env:SUPABASE_URL}",
+        "--dart-define=SUPABASE_ANON_KEY=${env:SUPABASE_ANON_KEY}"
+      ]
+    }
+  ]
+}

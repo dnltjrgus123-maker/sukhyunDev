@@ -1,0 +1,972 @@
+openapi: 3.0.3
+info:
+  title: Badminton Meetup API
+  version: 0.2.0
+  description: >
+    Flutter + Node.js MVP API for venue discovery, venue-based group browsing,
+    join application workflow, and social account linking.
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Auth
+  - name: Users
+  - name: Venues
+  - name: Groups
+  - name: Memberships
+  - name: Events
+  - name: Notifications
+  - name: Favorites
+  - name: Lightning
+  - name: Reviews
+paths:
+  /auth/social/{provider}:
+    post:
+      tags: [Auth]
+      summary: Login or signup with social provider
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            $ref: '#/components/schemas/SocialProvider'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialLoginRequest'
+      responses:
+        '200':
+          description: Auth success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          description: Account linking required for same email conflict
+  /auth/link/{provider}:
+    post:
+      tags: [Auth]
+      summary: Link current account with social provider
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            $ref: '#/components/schemas/SocialProvider'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialLinkRequest'
+      responses:
+        '200':
+          description: Social account linked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialAccount'
+  /auth/merge:
+    post:
+      tags: [Auth]
+      summary: Merge duplicated accounts after verification
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountMergeRequest'
+      responses:
+        '200':
+          description: Account merged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /venues:
+    get:
+      tags: [Venues]
+      summary: List venues with filters
+      parameters:
+        - in: query
+          name: area
+          schema:
+            type: string
+        - in: query
+          name: minCourtCount
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: parking
+          schema:
+            type: boolean
+        - in: query
+          name: openNow
+          schema:
+            type: boolean
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [distance, rating]
+      responses:
+        '200':
+          description: Venue list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VenueSummary'
+                  nextCursor:
+                    type: string
+                    nullable: true
+  /venues/{venueId}:
+    get:
+      tags: [Venues]
+      summary: Get venue detail
+      parameters:
+        - $ref: '#/components/parameters/VenueId'
+      responses:
+        '200':
+          description: Venue detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VenueDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /venues/{venueId}/groups:
+    get:
+      tags: [Groups]
+      summary: List groups using the venue
+      parameters:
+        - $ref: '#/components/parameters/VenueId'
+        - in: query
+          name: levelMin
+          schema:
+            $ref: '#/components/schemas/SkillLevel'
+        - in: query
+          name: levelMax
+          schema:
+            $ref: '#/components/schemas/SkillLevel'
+        - in: query
+          name: recruitingOnly
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Group list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GroupSummary'
+  /groups:
+    post:
+      tags: [Groups]
+      summary: Create group (host)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroupRequest'
+      responses:
+        '201':
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetail'
+    get:
+      tags: [Groups]
+      summary: List groups
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: level
+          schema:
+            $ref: '#/components/schemas/SkillLevel'
+        - in: query
+          name: recruitingOnly
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Group list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GroupSummary'
+  /groups/{groupId}:
+    get:
+      tags: [Groups]
+      summary: Get group detail
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Group detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /groups/{groupId}/join-requests:
+    post:
+      tags: [Memberships]
+      summary: Apply to join a group
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyMembershipRequest'
+      responses:
+        '201':
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Already applied or already a member
+    get:
+      tags: [Memberships]
+      summary: List membership applications (host only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/MembershipStatus'
+      responses:
+        '200':
+          description: Membership list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Membership'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /groups/{groupId}/join-requests/{membershipId}:
+    patch:
+      tags: [Memberships]
+      summary: Approve or reject an application (host only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - $ref: '#/components/parameters/MembershipId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipDecisionRequest'
+      responses:
+        '200':
+          description: Membership updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Capacity full or invalid state transition
+  /groups/{groupId}/events:
+    get:
+      tags: [Events]
+      summary: List group events
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Event list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+    post:
+      tags: [Events]
+      summary: Create event (host only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        '201':
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List current user notifications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Notification list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+  /notifications/{notificationId}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark notification as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/NotificationId'
+      responses:
+        '200':
+          description: Notification updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+  /favorites:
+    get:
+      tags: [Favorites]
+      summary: List user favorites (venue/group)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Favorite list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Favorite'
+  /favorites/{targetType}/{targetId}:
+    post:
+      tags: [Favorites]
+      summary: Add favorite
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TargetType'
+        - $ref: '#/components/parameters/TargetId'
+      responses:
+        '201':
+          description: Favorite added
+    delete:
+      tags: [Favorites]
+      summary: Remove favorite
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TargetType'
+        - $ref: '#/components/parameters/TargetId'
+      responses:
+        '204':
+          description: Favorite removed
+  /lightning-matches:
+    get:
+      tags: [Lightning]
+      summary: List lightning matches
+      responses:
+        '200':
+          description: Lightning match list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LightningMatch'
+    post:
+      tags: [Lightning]
+      summary: Create lightning match
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLightningMatchRequest'
+      responses:
+        '201':
+          description: Lightning match created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LightningMatch'
+  /reviews:
+    post:
+      tags: [Reviews]
+      summary: Create review for venue or group
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+      responses:
+        '201':
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    VenueId:
+      in: path
+      name: venueId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    GroupId:
+      in: path
+      name: groupId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MembershipId:
+      in: path
+      name: membershipId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    NotificationId:
+      in: path
+      name: notificationId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TargetType:
+      in: path
+      name: targetType
+      required: true
+      schema:
+        type: string
+        enum: [venue, group]
+    TargetId:
+      in: path
+      name: targetId
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    Unauthorized:
+      description: Authentication required or invalid token
+    Forbidden:
+      description: Not enough permission
+    NotFound:
+      description: Resource not found
+  schemas:
+    SocialProvider:
+      type: string
+      enum: [kakao, naver, google]
+    SkillLevel:
+      type: string
+      enum: [beginner, intermediate, advanced]
+    MembershipStatus:
+      type: string
+      enum: [applied, approved, rejected, expired]
+    GroupStatus:
+      type: string
+      enum: [recruiting, closed]
+    SocialLoginRequest:
+      type: object
+      required: [providerUserId]
+      properties:
+        providerUserId:
+          type: string
+        email:
+          type: string
+          format: email
+          nullable: true
+        emailVerified:
+          type: boolean
+          default: false
+        nickname:
+          type: string
+          nullable: true
+        profileImageUrl:
+          type: string
+          nullable: true
+    SocialLinkRequest:
+      type: object
+      required: [providerUserId]
+      properties:
+        providerUserId:
+          type: string
+        email:
+          type: string
+          format: email
+          nullable: true
+        emailVerified:
+          type: boolean
+          default: false
+    AccountMergeRequest:
+      type: object
+      required: [sourceUserId, reason]
+      properties:
+        sourceUserId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+    SocialAccount:
+      type: object
+      required: [id, userId, provider, providerUserId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        provider:
+          $ref: '#/components/schemas/SocialProvider'
+        providerUserId:
+          type: string
+        email:
+          type: string
+          format: email
+          nullable: true
+        emailVerified:
+          type: boolean
+        linkedAt:
+          type: string
+          format: date-time
+    AuthResponse:
+      type: object
+      required: [accessToken, user]
+      properties:
+        accessToken:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+    User:
+      type: object
+      required: [id, email, nickname, skillLevel, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        nickname:
+          type: string
+        skillLevel:
+          $ref: '#/components/schemas/SkillLevel'
+        role:
+          type: string
+          enum: [member, host, admin]
+    VenueSummary:
+      type: object
+      required: [id, name, address, courtCount, ratingAvg]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          type: string
+        courtCount:
+          type: integer
+        parking:
+          type: boolean
+        ratingAvg:
+          type: number
+          format: float
+    VenueDetail:
+      allOf:
+        - $ref: '#/components/schemas/VenueSummary'
+        - type: object
+          properties:
+            latitude:
+              type: number
+              format: double
+            longitude:
+              type: number
+              format: double
+            openHours:
+              type: object
+              additionalProperties: true
+    CreateGroupRequest:
+      type: object
+      required: [name, levelMin, levelMax, maxMembers, requiresApproval]
+      properties:
+        name:
+          type: string
+        homeVenueId:
+          type: string
+          format: uuid
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        levelMin:
+          $ref: '#/components/schemas/SkillLevel'
+        levelMax:
+          $ref: '#/components/schemas/SkillLevel'
+        maxMembers:
+          type: integer
+          minimum: 1
+        requiresApproval:
+          type: boolean
+        membershipPolicy:
+          type: object
+          additionalProperties: true
+    GroupSummary:
+      type: object
+      required: [id, name, levelMin, levelMax, maxMembers, memberCount, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        levelMin:
+          $ref: '#/components/schemas/SkillLevel'
+        levelMax:
+          $ref: '#/components/schemas/SkillLevel'
+        scheduleSummary:
+          type: string
+        maxMembers:
+          type: integer
+        memberCount:
+          type: integer
+        status:
+          $ref: '#/components/schemas/GroupStatus'
+    GroupDetail:
+      allOf:
+        - $ref: '#/components/schemas/GroupSummary'
+        - type: object
+          properties:
+            hostUserId:
+              type: string
+              format: uuid
+            homeVenueId:
+              type: string
+              format: uuid
+              nullable: true
+            description:
+              type: string
+            requiresApproval:
+              type: boolean
+            membershipPolicy:
+              type: object
+              additionalProperties: true
+    ApplyMembershipRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          maxLength: 500
+    Membership:
+      type: object
+      required: [id, userId, groupId, role, status, requestedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [member, manager]
+        status:
+          $ref: '#/components/schemas/MembershipStatus'
+        requestedAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+          nullable: true
+        decidedBy:
+          type: string
+          format: uuid
+          nullable: true
+    MembershipDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approve, reject]
+    Event:
+      type: object
+      required: [id, groupId, venueId, title, startAt, endAt, capacity]
+      properties:
+        id:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        venueId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        fee:
+          type: integer
+        capacity:
+          type: integer
+    CreateEventRequest:
+      type: object
+      required: [venueId, title, startAt, endAt, capacity]
+      properties:
+        venueId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        fee:
+          type: integer
+          default: 0
+        capacity:
+          type: integer
+          minimum: 1
+    Notification:
+      type: object
+      required: [id, userId, type, payload, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [membership_approved, membership_rejected, membership_expired, event_updated]
+        payload:
+          type: object
+          additionalProperties: true
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    Favorite:
+      type: object
+      required: [id, userId, targetType, targetId, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        targetType:
+          type: string
+          enum: [venue, group]
+        targetId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+    CreateLightningMatchRequest:
+      type: object
+      required: [venueId, startAt, endAt, capacity, level]
+      properties:
+        venueId:
+          type: string
+          format: uuid
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+          minimum: 2
+        level:
+          $ref: '#/components/schemas/SkillLevel'
+        note:
+          type: string
+          nullable: true
+    LightningMatch:
+      type: object
+      required: [id, hostUserId, venueId, startAt, endAt, capacity, level, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        hostUserId:
+          type: string
+          format: uuid
+        venueId:
+          type: string
+          format: uuid
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+        level:
+          $ref: '#/components/schemas/SkillLevel'
+        status:
+          type: string
+          enum: [open, full, closed]
+        note:
+          type: string
+          nullable: true
+    CreateReviewRequest:
+      type: object
+      required: [targetType, targetId, rating]
+      properties:
+        targetType:
+          type: string
+          enum: [venue, group]
+        targetId:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+    Review:
+      type: object
+      required: [id, authorUserId, targetType, targetId, rating, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        authorUserId:
+          type: string
+          format: uuid
+        targetType:
+          type: string
+          enum: [venue, group]
+        targetId:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time

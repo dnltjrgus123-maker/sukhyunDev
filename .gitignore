@@ -1,0 +1,18 @@
+# Secrets & local env (백엔드·루트)
+.env
+.env.*
+!.env.example
+
+# Flutter 로컬 dart-define (anon 키 포함 — 커밋 금지)
+apps/mobile/dart_defines.json
+
+# Firebase Admin SDK (절대 커밋 금지)
+*firebase-adminsdk*.json
+
+# Dependencies / build outputs
+node_modules/
+dist/
+
+# OS/editor
+.DS_Store
+Thumbs.db

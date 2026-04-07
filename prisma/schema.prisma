@@ -1,0 +1,427 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SocialProvider {
+  kakao
+  naver
+  google
+}
+
+enum SkillLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum UserRole {
+  member
+  host
+  admin
+}
+
+enum GroupStatus {
+  recruiting
+  closed
+}
+
+enum MembershipRole {
+  member
+  manager
+}
+
+enum MembershipStatus {
+  applied
+  approved
+  rejected
+  expired
+}
+
+enum NotificationType {
+  membership_approved
+  membership_rejected
+  membership_expired
+  event_updated
+  play_session_start
+  play_session_spot_open
+  play_session_promoted_from_waitlist
+  lesson_booking_confirmed
+  lesson_booking_request
+
+  @@map("notification_type")
+}
+
+enum FavoriteTargetType {
+  venue
+  group
+  user
+
+  @@map("favorite_target_type")
+}
+
+enum ReviewTargetType {
+  venue
+  group
+
+  @@map("review_target_type")
+}
+
+enum LightningStatus {
+  open
+  full
+  closed
+
+  @@map("lightning_status")
+}
+
+enum LessonBookingStatus {
+  pending
+  confirmed
+  cancelled
+
+  @@map("lesson_booking_status")
+}
+
+model User {
+  id                 String       @id @default(uuid()) @db.Uuid
+  email              String?      @unique
+  nickname           String
+  photoUrl           String?      @map("photo_url")
+  skillLevel         SkillLevel   @default(beginner) @map("skill_level")
+  preferredArea      String?      @map("preferred_area")
+  preferredTimeSlots Json?        @map("preferred_time_slots")
+  role               UserRole     @default(member)
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+
+  hostedGroups        Group[]           @relation("GroupHost")
+  createdEvents       Event[]           @relation("EventCreator")
+  memberships         Membership[]      @relation("MembershipUser")
+  membershipDecisions Membership[]      @relation("MembershipDecider")
+  notifications       Notification[]
+  socialAccounts      SocialAccount[]
+  favorites           Favorite[]
+  hostedLightning     LightningMatch[]  @relation("LightningHost")
+  reviews             Review[]          @relation("ReviewAuthor")
+  mergeSources        AccountMergeLog[] @relation("MergeSource")
+  mergeTargets        AccountMergeLog[] @relation("MergeTarget")
+  followsOutgoing     UserFollow[]      @relation("FollowerUser")
+  followsIncoming     UserFollow[]      @relation("FolloweeUser")
+  dmSent              DirectMessage[]   @relation("DmFrom")
+  dmReceived          DirectMessage[]   @relation("DmTo")
+  chatMessages        ChatMessage[]
+  playSessionsHosted  PlaySession[]     @relation("PlaySessionHost")
+  coachProfile        CoachProfile?
+  lessonAsCoach       LessonBooking[]   @relation("LessonCoach")
+  lessonAsStudent     LessonBooking[]   @relation("LessonStudent")
+
+  @@map("users")
+}
+
+model Venue {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  address     String
+  latitude    Decimal? @db.Decimal(10, 7)
+  longitude   Decimal? @db.Decimal(10, 7)
+  courtCount  Int      @default(1) @map("court_count")
+  openHours   Json?    @map("open_hours")
+  amenities   Json?
+  ratingAvg   Decimal  @default(0.00) @db.Decimal(3, 2) @map("rating_avg")
+  reviewCount Int      @default(0) @map("review_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  homeGroups       Group[]
+  events           Event[]
+  lightningMatches LightningMatch[]
+  playSessions     PlaySession[]
+  lessonBookings   LessonBooking[]
+
+  @@index([latitude, longitude], map: "idx_venues_geo")
+  @@map("venues")
+}
+
+model Group {
+  id               String      @id @default(uuid()) @db.Uuid
+  name             String
+  hostUserId       String      @map("host_user_id") @db.Uuid
+  homeVenueId      String?     @map("home_venue_id") @db.Uuid
+  photoUrl         String?     @map("photo_url")
+  description      String?
+  levelMin         SkillLevel  @default(beginner) @map("level_min")
+  levelMax         SkillLevel  @default(advanced) @map("level_max")
+  maxMembers       Int         @map("max_members")
+  requiresApproval Boolean     @default(true) @map("requires_approval")
+  membershipPolicy Json?       @map("membership_policy")
+  status           GroupStatus @default(recruiting)
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  host         User          @relation("GroupHost", fields: [hostUserId], references: [id])
+  homeVenue    Venue?        @relation(fields: [homeVenueId], references: [id])
+  events       Event[]
+  memberships  Membership[]
+  playSessions PlaySession[]
+  chatMessages ChatMessage[]
+  chatPolls    ChatPoll[]
+
+  @@index([homeVenueId], map: "idx_groups_home_venue")
+  @@index([status], map: "idx_groups_status")
+  @@map("groups")
+}
+
+model Event {
+  id        String   @id @default(uuid()) @db.Uuid
+  groupId   String   @map("group_id") @db.Uuid
+  venueId   String   @map("venue_id") @db.Uuid
+  title     String
+  startAt   DateTime @map("start_at")
+  endAt     DateTime @map("end_at")
+  fee       Int      @default(0)
+  capacity  Int
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  venue   Venue @relation(fields: [venueId], references: [id])
+  creator User  @relation("EventCreator", fields: [createdBy], references: [id])
+
+  @@index([groupId, startAt], map: "idx_events_group_start")
+  @@map("events")
+}
+
+model Membership {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @map("user_id") @db.Uuid
+  groupId        String           @map("group_id") @db.Uuid
+  role           MembershipRole   @default(member)
+  status         MembershipStatus
+  requestMessage String?          @map("request_message")
+  requestedAt    DateTime         @default(now()) @map("requested_at")
+  decidedAt      DateTime?        @map("decided_at")
+  decidedBy      String?          @map("decided_by") @db.Uuid
+
+  user    User   @relation("MembershipUser", fields: [userId], references: [id], onDelete: Cascade)
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  decider User?  @relation("MembershipDecider", fields: [decidedBy], references: [id])
+
+  @@unique([userId, groupId])
+  @@index([groupId, status], map: "idx_memberships_group_status")
+  @@map("memberships")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  payload   Json
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)], map: "idx_notifications_user_created")
+  @@map("notifications")
+}
+
+model SocialAccount {
+  id             String         @id @default(uuid()) @db.Uuid
+  userId         String         @map("user_id") @db.Uuid
+  provider       SocialProvider
+  providerUserId String         @map("provider_user_id")
+  email          String?
+  emailVerified  Boolean        @default(false) @map("email_verified")
+  linkedAt       DateTime       @default(now()) @map("linked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId], map: "idx_social_accounts_user_id")
+  @@map("social_accounts")
+}
+
+model AccountMergeLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  fromUserId String   @map("from_user_id") @db.Uuid
+  toUserId   String   @map("to_user_id") @db.Uuid
+  reason     String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  fromUser User @relation("MergeSource", fields: [fromUserId], references: [id])
+  toUser   User @relation("MergeTarget", fields: [toUserId], references: [id])
+
+  @@map("account_merge_logs")
+}
+
+model Favorite {
+  id         String             @id @default(uuid()) @db.Uuid
+  userId     String             @map("user_id") @db.Uuid
+  targetType FavoriteTargetType @map("target_type")
+  targetId   String             @map("target_id") @db.Uuid
+  createdAt  DateTime           @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([userId, createdAt(sort: Desc)], map: "idx_favorites_user_id")
+  @@map("favorites")
+}
+
+model LightningMatch {
+  id         String          @id @default(uuid()) @db.Uuid
+  hostUserId String          @map("host_user_id") @db.Uuid
+  venueId    String          @map("venue_id") @db.Uuid
+  startAt    DateTime        @map("start_at")
+  endAt      DateTime        @map("end_at")
+  capacity   Int
+  level      SkillLevel
+  note       String?
+  status     LightningStatus @default(open)
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  host  User  @relation("LightningHost", fields: [hostUserId], references: [id])
+  venue Venue @relation(fields: [venueId], references: [id])
+
+  @@index([venueId, startAt], map: "idx_lightning_venue_start")
+  @@map("lightning_matches")
+}
+
+model Review {
+  id           String           @id @default(uuid()) @db.Uuid
+  authorUserId String           @map("author_user_id") @db.Uuid
+  targetType   ReviewTargetType @map("target_type")
+  targetId     String           @map("target_id") @db.Uuid
+  rating       Int
+  comment      String?
+  imageUrl     String?          @map("image_url")
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  author User @relation("ReviewAuthor", fields: [authorUserId], references: [id])
+
+  @@index([targetType, targetId, createdAt(sort: Desc)], map: "idx_reviews_target")
+  @@map("reviews")
+}
+
+model UserFollow {
+  id         String   @id @default(uuid()) @db.Uuid
+  followerId String   @map("follower_id") @db.Uuid
+  followeeId String   @map("followee_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  follower User @relation("FollowerUser", fields: [followerId], references: [id], onDelete: Cascade)
+  followee User @relation("FolloweeUser", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followeeId])
+  @@map("user_follows")
+}
+
+model DirectMessage {
+  id         String   @id @default(uuid()) @db.Uuid
+  fromUserId String   @map("from_user_id") @db.Uuid
+  toUserId   String   @map("to_user_id") @db.Uuid
+  text       String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  fromUser User @relation("DmFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("DmTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([fromUserId, toUserId, createdAt(sort: Desc)], map: "idx_dm_thread")
+  @@map("direct_messages")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  groupId   String   @map("group_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  text      String
+  isPinned  Boolean  @default(false) @map("is_pinned")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([groupId, createdAt], map: "idx_chat_messages_group")
+  @@map("chat_messages")
+}
+
+model ChatPoll {
+  id        String   @id @default(uuid()) @db.Uuid
+  groupId   String   @map("group_id") @db.Uuid
+  question  String
+  options   Json
+  votes     Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("chat_polls")
+}
+
+model PlaySession {
+  id                    String   @id @default(uuid()) @db.Uuid
+  groupId               String   @map("group_id") @db.Uuid
+  hostUserId            String   @map("host_user_id") @db.Uuid
+  name                  String
+  venueId               String   @map("venue_id") @db.Uuid
+  startsAt              DateTime @map("starts_at")
+  endsAt                DateTime @map("ends_at")
+  courtCount            Int      @map("court_count")
+  levelMin              SkillLevel @map("level_min")
+  levelMax              SkillLevel @map("level_max")
+  maxParticipants       Int      @map("max_participants")
+  participantIds        Json     @map("participant_ids")
+  waitlistIds           Json     @map("waitlist_ids")
+  defaultMatchingMode   String   @default("balanced") @map("default_matching_mode")
+  currentRound          Int      @default(0) @map("current_round")
+  rounds                Json
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  host  User  @relation("PlaySessionHost", fields: [hostUserId], references: [id])
+  venue Venue @relation(fields: [venueId], references: [id])
+
+  @@index([groupId, startsAt], map: "idx_play_sessions_group")
+  @@index([startsAt], map: "idx_play_sessions_starts")
+  @@map("play_sessions")
+}
+
+model CoachProfile {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @unique @map("user_id") @db.Uuid
+  bio               String
+  hourlyRateWon     Int      @map("hourly_rate_won")
+  preferredVenueIds Json     @map("preferred_venue_ids")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("coach_profiles")
+}
+
+model LessonBooking {
+  id            String              @id @default(uuid()) @db.Uuid
+  coachUserId   String              @map("coach_user_id") @db.Uuid
+  studentUserId String              @map("student_user_id") @db.Uuid
+  startsAt            DateTime      @map("starts_at")
+  venueId       String?            @map("venue_id") @db.Uuid
+  note          String?
+  status        LessonBookingStatus @default(pending)
+  createdAt     DateTime           @default(now()) @map("created_at")
+
+  coach   User  @relation("LessonCoach", fields: [coachUserId], references: [id])
+  student User  @relation("LessonStudent", fields: [studentUserId], references: [id])
+  venue   Venue? @relation(fields: [venueId], references: [id])
+
+  @@index([coachUserId], map: "idx_lesson_bookings_coach")
+  @@index([studentUserId], map: "idx_lesson_bookings_student")
+  @@map("lesson_bookings")
+}
