@@ -2,11 +2,21 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Flutter: dart_defines.json (권장)",
+      "name": "Flutter: dart_defines.json (권장 · VM API)",
       "request": "launch",
       "type": "dart",
       "cwd": "apps/mobile",
       "toolArgs": ["--dart-define-from-file=dart_defines.json"]
+    },
+    {
+      "name": "Flutter: 로컬 API (에뮬→호스트 10.0.2.2)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "apps/mobile",
+      "toolArgs": [
+        "--dart-define-from-file=dart_defines.json",
+        "--dart-define=API_BASE_URL=http://10.0.2.2:4000"
+      ]
     },
     {
       "name": "Flutter: 환경변수 SUPABASE_*",
