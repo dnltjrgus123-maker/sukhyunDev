@@ -53,6 +53,49 @@ class ApiClient {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  /// OAuth/가입 직후 Supabase `sub`와 동일한 `users` 행을 서버에 맞춥니다.
+  Future<Map<String, dynamic>> syncProfile({String? nickname, String? photoUrl}) async {
+    final body = <String, dynamic>{};
+    if (nickname != null) body["nickname"] = nickname;
+    if (photoUrl != null) body["photoUrl"] = photoUrl;
+    final response = await _client.post(
+      _uri("/users/sync"),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
+    _ensureSuccess(response, "프로필 동기화 실패");
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  /// 모임 생성 (호스트는 Bearer 토큰의 `sub`).
+  Future<Map<String, dynamic>> createGroup({
+    required String name,
+    String? homeVenueId,
+    String? description,
+    String levelMin = "beginner",
+    String levelMax = "advanced",
+    int maxMembers = 20,
+    bool requiresApproval = true,
+    String? photoUrl,
+  }) async {
+    final response = await _client.post(
+      _uri("/groups"),
+      headers: await _headers(),
+      body: jsonEncode({
+        "name": name,
+        if (homeVenueId != null && homeVenueId.isNotEmpty) "homeVenueId": homeVenueId,
+        "description": description ?? "",
+        "levelMin": levelMin,
+        "levelMax": levelMax,
+        "maxMembers": maxMembers,
+        "requiresApproval": requiresApproval,
+        if (photoUrl != null && photoUrl.isNotEmpty) "photoUrl": photoUrl,
+      }),
+    );
+    _ensureSuccess(response, "모임 만들기 실패");
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
   /// [patch] 예: `{"nickname":"새닉"}` , `{"photoUrl":"https://…"}` , 사진 제거 시 `"photoUrl":""`
   Future<Map<String, dynamic>> patchCurrentUserProfile(Map<String, dynamic> patch) async {
     if (patch.isEmpty) return getCurrentUser();

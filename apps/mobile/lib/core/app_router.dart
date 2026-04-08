@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../features/coaching/coaching_screen.dart";
 import "../features/discover/discover_meetups_screen.dart";
+import "../features/groups/group_create_screen.dart";
 import "../features/groups/group_detail_screen.dart";
 import "../features/host/host_events_screen.dart";
 import "../features/host/host_requests_screen.dart";
@@ -15,6 +16,7 @@ class AppRoutes {
   static const venues = "/venues";
   static const venueDetail = "/venues/detail";
   static const groupDetail = "/groups/detail";
+  static const groupCreate = "/groups/create";
   static const myPage = "/my";
   static const hostRequests = "/host/requests";
   static const hostEvents = "/host/events";
@@ -35,6 +37,8 @@ class AppRouter {
       case AppRoutes.groupDetail:
         final args = settings.arguments as Map<String, dynamic>? ?? {};
         return _material(GroupDetailScreen(groupId: args["groupId"] as String? ?? "g-1"));
+      case AppRoutes.groupCreate:
+        return _material(const GroupCreateScreen());
       case AppRoutes.myPage:
         return _material(const MyPageScreen());
       case AppRoutes.hostRequests:

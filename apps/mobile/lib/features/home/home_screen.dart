@@ -1,8 +1,8 @@
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../core/app_router.dart";
-import "../../core/widgets/app_widgets.dart";
 import "../auth/providers/auth_providers.dart";
 
 class HomeScreen extends ConsumerWidget {
@@ -12,200 +12,114 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final authState = ref.watch(authControllerProvider);
-    final supabaseUserId = authState.valueOrNull?.user.id;
+    final nick = authState.valueOrNull?.user.userMetadata?["full_name"]?.toString() ??
+        authState.valueOrNull?.user.email?.split("@").first;
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.primary.withValues(alpha: 0.85),
-                    theme.colorScheme.secondary.withValues(alpha: 0.9),
-                  ],
-                ),
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.35),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
+            child: Padding(
               padding: EdgeInsets.fromLTRB(
-                20,
-                MediaQuery.paddingOf(context).top + 12,
-                20,
-                28,
+                24,
+                MediaQuery.paddingOf(context).top + 20,
+                24,
+                12,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "배드민턴 모임",
+                    nick != null && nick.isNotEmpty ? "안녕하세요, $nick 님" : "안녕하세요",
                     style: theme.textTheme.headlineMedium?.copyWith(
-                      color: theme.colorScheme.onPrimary,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
+                      fontSize: 28,
+                      letterSpacing: -0.6,
+                      height: 1.2,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "구장 찾기 · 모임 · 번개까지 한곳에서",
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onPrimary.withValues(alpha: 0.92),
+                    "오늘은 어떤 코트로 갈까요?",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 18,
                       height: 1.35,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  const Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _HeroChip(icon: Icons.sports_tennis, label: "실내 코트"),
-                      _HeroChip(icon: Icons.groups_2_outlined, label: "모임 매칭"),
-                      _HeroChip(icon: Icons.bolt_outlined, label: "번개"),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: theme.colorScheme.onPrimary,
-                      foregroundColor: theme.colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    ),
-                    onPressed: authState.isLoading
-                        ? null
-                        : () async {
-                            await ref
-                                .read(authControllerProvider.notifier)
-                                .signInWithMockSocialFromServer();
-                            final result = ref.read(authControllerProvider);
-                            if (!context.mounted) return;
-                            result.whenOrNull(
-                              error: (err, _) => ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("로그인 실패: $err")),
-                              ),
-                              data: (session) {
-                                final id = session?.user.id;
-                                if (id != null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text("로그인 완료 · $id")),
-                                  );
-                                }
-                              },
-                            );
-                          },
-                    icon: authState.isLoading
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: theme.colorScheme.primary,
-                            ),
-                          )
-                        : const Icon(Icons.login_rounded),
-                    label: Text(authState.isLoading ? "로그인 중…" : "Supabase로 로그인(모의)"),
-                  ),
-                  if (supabaseUserId != null) ...[
-                    const SizedBox(height: 14),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.verified_user_outlined, color: theme.colorScheme.onPrimary, size: 20),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              "Supabase 사용자 · ${supabaseUserId.length > 28 ? "${supabaseUserId.substring(0, 28)}…" : supabaseUserId}",
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const SectionHeader(
-                  title: "바로 가기",
-                  subtitle: "MVP 플로우와 운영자 화면으로 이동합니다.",
+                const SizedBox(height: 16),
+                _HeroCreateCard(
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.groupCreate),
                 ),
-                _HomeNavCard(
-                  icon: Icons.location_city_rounded,
-                  iconColor: theme.colorScheme.primary,
-                  title: "구장 목록",
-                  subtitle: "지역 필터 → 상세 → 이 구장의 모임",
+                const SizedBox(height: 18),
+                _NavTileCard(
+                  icon: Icons.location_on_outlined,
+                  title: "구장 찾기",
+                  subtitle: "지역별 배드민턴장과 이 구장의 모임",
+                  accent: theme.colorScheme.secondary,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.venues),
                 ),
-                _HomeNavCard(
-                  icon: Icons.near_me_rounded,
-                  iconColor: theme.colorScheme.tertiary,
+                _NavTileCard(
+                  icon: Icons.explore_outlined,
                   title: "근처 모임",
-                  subtitle: "거리순·시간순 탐색 (구장 좌표 기준)",
+                  subtitle: "거리·시간 순 디스커버",
+                  accent: theme.colorScheme.tertiary,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.discoverMeetups),
                 ),
-                _HomeNavCard(
-                  icon: Icons.sports_martial_arts_rounded,
-                  iconColor: theme.colorScheme.secondary,
+                _NavTileCard(
+                  icon: Icons.sports_rounded,
                   title: "코칭 · 레슨",
-                  subtitle: "코치 목록 · 레슨 예약 요청",
+                  subtitle: "코치 찾기와 예약",
+                  accent: theme.colorScheme.primary,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.coaching),
                 ),
-                _HomeNavCard(
-                  icon: Icons.person_rounded,
-                  iconColor: theme.colorScheme.secondary,
+                _NavTileCard(
+                  icon: Icons.person_outline_rounded,
                   title: "마이페이지",
-                  subtitle: "알림 · 신청 현황",
+                  subtitle: "알림 · 프로필",
+                  accent: theme.colorScheme.outline,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.myPage),
                 ),
-                _HomeNavCard(
-                  icon: Icons.how_to_reg_rounded,
-                  iconColor: theme.colorScheme.tertiary,
-                  title: "운영자 · 가입 신청 관리",
-                  subtitle: "승인 / 거절 (샘플 모임 g-1)",
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.hostRequests,
-                    arguments: {"groupId": "g-1"},
+                if (kDebugMode) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    "개발 전용",
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
                   ),
-                ),
-                _HomeNavCard(
-                  icon: Icons.event_note_rounded,
-                  iconColor: theme.colorScheme.primary,
-                  title: "운영자 · 정모 일정",
-                  subtitle: "정모 캘린더 (샘플)",
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.hostEvents,
-                    arguments: {"groupId": "g-1"},
+                  const SizedBox(height: 6),
+                  OutlinedButton.icon(
+                    onPressed: authState.isLoading
+                        ? null
+                        : () => ref
+                            .read(authControllerProvider.notifier)
+                            .signInWithMockSocialFromServer(),
+                    icon: authState.isLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: theme.colorScheme.primary,
+                            ),
+                          )
+                        : const Icon(Icons.bug_report_outlined),
+                    label: const Text("모의 소셜(서버)"),
                   ),
-                ),
+                ],
+                const SizedBox(height: 110),
               ]),
             ),
           ),
@@ -215,76 +129,135 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _HeroChip extends StatelessWidget {
-  const _HeroChip({required this.icon, required this.label});
+class _HeroCreateCard extends StatelessWidget {
+  const _HeroCreateCard({required this.onTap});
 
-  final IconData icon;
-  final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.onPrimary.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: theme.colorScheme.onPrimary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onPrimary,
-              fontWeight: FontWeight.w600,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(26),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                theme.colorScheme.primary,
+                theme.colorScheme.primary.withValues(alpha: 0.82),
+                const Color(0xFF0D9488),
+              ],
             ),
+            borderRadius: BorderRadius.circular(26),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                blurRadius: 28,
+                offset: const Offset(0, 14),
+              ),
+            ],
           ),
-        ],
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "새 모임 개설",
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "따뜻한 라운드부터 번개까지,\n몇 분이면 준비 끝.",
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        height: 1.45,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 28),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _HomeNavCard extends StatelessWidget {
-  const _HomeNavCard({
+class _NavTileCard extends StatelessWidget {
+  const _NavTileCard({
     required this.icon,
-    required this.iconColor,
     required this.title,
     required this.subtitle,
+    required this.accent,
     required this.onTap,
   });
 
   final IconData icon;
-  final Color iconColor;
   final String title;
   final String subtitle;
+  final Color accent;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Material(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(18),
-        clipBehavior: Clip.antiAlias,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        elevation: 0,
+        shadowColor: Colors.black.withValues(alpha: 0.06),
         child: InkWell(
           onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.12),
+                    color: accent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, color: iconColor, size: 26),
+                  child: Icon(icon, color: accent, size: 26),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -293,14 +266,18 @@ class _HomeNavCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
-                          height: 1.35,
+                          height: 1.4,
+                          fontSize: 15,
                         ),
                       ),
                     ],

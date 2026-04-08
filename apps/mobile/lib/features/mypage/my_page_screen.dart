@@ -1,9 +1,11 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
+import "../../core/config/app_env.dart";
 import "../../core/providers/api_provider.dart";
 import "../../core/widgets/app_snackbar.dart";
 import "../../core/widgets/app_widgets.dart";
+import "../auth/providers/auth_providers.dart";
 import "providers/mypage_providers.dart";
 
 String _notificationTitleKo(String type) {
@@ -126,6 +128,23 @@ class MyPageScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text("마이페이지"),
         actions: [
+          if (AppEnv.hasSupabaseConfig)
+            TextButton(
+              onPressed: () async {
+                await ref.read(authControllerProvider.notifier).signOut();
+                if (context.mounted) {
+                  showAppSnackBar(context, message: "로그아웃했습니다.");
+                }
+              },
+              child: Text(
+                "로그아웃",
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+            ),
           profileAsync.maybeWhen(
             data: (user) => IconButton(
               icon: const Icon(Icons.edit_outlined),

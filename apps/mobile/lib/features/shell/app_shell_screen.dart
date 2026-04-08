@@ -34,6 +34,9 @@ class _AppShellScreenState extends State<AppShellScreen> {
         selectedIndex: _index,
         animationDuration: const Duration(milliseconds: 280),
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.black.withValues(alpha: 0.06),
+        elevation: 8,
         onDestinationSelected: (index) => setState(() => _index = index),
         destinations: const [
           NavigationDestination(

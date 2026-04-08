@@ -606,6 +606,69 @@ apiRouter.get("/users/me", async (req, res) => {
   return res.json(userToApi(user));
 });
 
+apiRouter.post("/users/sync", async (req, res) => {
+  const userId = (req as AugmentedRequest).actorUserId;
+  if (!userId) {
+    return res.status(401).json({ message: "Bearer access token required for profile sync." });
+  }
+  const admin = getSupabaseAdmin();
+  let email: string | null | undefined;
+  let nickname = "플레이어";
+  let photoUrl: string | null | undefined;
+  if (admin) {
+    const got = await admin.auth.admin.getUserById(userId);
+    if (!got.error && got.data.user) {
+      const u = got.data.user;
+      email = u.email ?? null;
+      const meta = u.user_metadata as Record<string, unknown> | undefined;
+      const name = meta?.["full_name"] ?? meta?.["name"] ?? meta?.["nickname"];
+      if (typeof name === "string" && name.trim().length > 0) {
+        nickname = name.trim().slice(0, 80);
+      }
+      const av = meta?.["avatar_url"] ?? meta?.["picture"];
+      if (typeof av === "string" && av.trim().length > 0) {
+        photoUrl = av.trim().slice(0, 2048);
+      }
+    }
+  }
+  const body = req.body ?? {};
+  if (typeof body.nickname === "string" && body.nickname.trim().length > 0) {
+    nickname = body.nickname.trim().slice(0, 80);
+  }
+  if (body.photoUrl === null || body.photoUrl === "") {
+    photoUrl = null;
+  } else if (typeof body.photoUrl === "string" && body.photoUrl.trim().length > 0) {
+    photoUrl = body.photoUrl.trim().slice(0, 2048);
+  }
+  try {
+    const existing = await prisma.user.findUnique({ where: { id: userId } });
+    let user: UserRow;
+    if (existing) {
+      user = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...(email !== undefined && email !== null && email.length > 0 ? { email } : {}),
+          nickname,
+          ...(photoUrl !== undefined ? { photoUrl: photoUrl ?? null } : {})
+        }
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          id: userId,
+          email: email ?? null,
+          nickname,
+          photoUrl: photoUrl ?? null
+        }
+      });
+    }
+    return res.status(existing ? 200 : 201).json(userToApi(user));
+  } catch (e) {
+    console.error(e);
+    return res.status(409).json({ message: "Profile sync failed (email conflict or invalid data)." });
+  }
+});
+
 apiRouter.patch("/users/me", async (req, res) => {
   const id = getActorUserId(req);
   const body = req.body ?? {};

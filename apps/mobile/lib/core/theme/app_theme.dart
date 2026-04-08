@@ -15,8 +15,8 @@ abstract final class AppTheme {
       secondary: const Color(0xFF0F766E),
       onSecondary: Colors.white,
       tertiary: const Color(0xFFC2410C),
-      surface: const Color(0xFFF8FAF9),
-      surfaceContainerHighest: const Color(0xFFE7EEEA),
+      surface: const Color(0xFFF5F6F4),
+      surfaceContainerHighest: const Color(0xFFE8EAE8),
       error: const Color(0xFFB91C1C),
     );
 
@@ -24,6 +24,18 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       visualDensity: VisualDensity.standard,
+      textTheme: Typography.blackMountainView.apply(
+        bodyColor: const Color(0xFF1C1C1E),
+        displayColor: const Color(0xFF1C1C1E),
+      ).copyWith(
+        headlineLarge: const TextStyle(fontWeight: FontWeight.w800, fontSize: 32, height: 1.15),
+        headlineMedium: const TextStyle(fontWeight: FontWeight.w800, fontSize: 28, height: 1.2),
+        headlineSmall: const TextStyle(fontWeight: FontWeight.w800, fontSize: 24, height: 1.25),
+        titleLarge: const TextStyle(fontWeight: FontWeight.w700, fontSize: 22, height: 1.3),
+        titleMedium: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18, height: 1.35),
+        bodyLarge: const TextStyle(fontSize: 17, height: 1.45, fontWeight: FontWeight.w500),
+        bodyMedium: const TextStyle(fontSize: 16, height: 1.42),
+      ),
     );
 
     return base.copyWith(
@@ -62,10 +74,11 @@ abstract final class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: scheme.surfaceContainerLow,
+        color: Colors.white,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         clipBehavior: Clip.antiAlias,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
