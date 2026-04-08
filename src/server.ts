@@ -1,7 +1,7 @@
 import "dotenv/config";
 import "express-async-errors";
 import express from "express";
-import { isSupabaseJwtSecretConfigured } from "./lib/supabase-auth.js";
+import { isSupabaseAccessTokenVerificationConfigured } from "./lib/supabase-auth.js";
 import { isSupabaseConfigured } from "./lib/supabase.js";
 import { apiRouter } from "./routes/api.js";
 
@@ -14,11 +14,10 @@ const authMode: "hybrid" | "strict" =
         ? "strict"
         : "hybrid";
 
-if (authMode === "strict" && isSupabaseConfigured() && !isSupabaseJwtSecretConfigured()) {
+if (authMode === "strict" && isSupabaseConfigured() && !isSupabaseAccessTokenVerificationConfigured()) {
   console.error(
-    "[FATAL] AUTH_MODE=strict 이고 Supabase(service role)가 설정된 경우 " +
-      "SUPABASE_JWT_SECRET(대시보드 API → JWT Secret)가 필요합니다. " +
-      "없으면 Bearer 검증을 건너뛰어 액터를 식별할 수 없습니다."
+    "[FATAL] AUTH_MODE=strict 이고 Supabase가 설정된 경우 Bearer 검증에 " +
+      "SUPABASE_JWT_SECRET(HS256) 또는 SUPABASE_URL(JWKS 폴백) 중 하나가 필요합니다."
   );
   process.exit(1);
 }

@@ -20,7 +20,11 @@ import { pushInAppNotification } from "../utils/in-app-notification.js";
 import { MembershipService } from "../services/membership.service.js";
 import { tryAttachSupabaseSessionToSocialResponse } from "../lib/mock-supabase-session.js";
 import { isSupabaseConfigured, getSupabaseAdmin, getSupabaseAnon } from "../lib/supabase.js";
-import { isSupabaseJwtSecretConfigured, verifySupabaseAccessToken } from "../lib/supabase-auth.js";
+import {
+  isSupabaseAccessTokenVerificationConfigured,
+  isSupabaseJwtSecretConfigured,
+  verifySupabaseAccessToken
+} from "../lib/supabase-auth.js";
 import { prisma } from "../lib/prisma.js";
 import {
   PrismaGroupRepository,
@@ -346,7 +350,7 @@ apiRouter.use(async (req, _res, next) => {
     r.authBearerRejected = true;
     return next();
   }
-  if (!isSupabaseJwtSecretConfigured()) {
+  if (!isSupabaseAccessTokenVerificationConfigured()) {
     return next();
   }
   try {
@@ -379,7 +383,8 @@ apiRouter.get("/health", (_req, res) => {
   res.json({
     ok: true,
     supabase: isSupabaseConfigured(),
-    supabaseJwt: isSupabaseJwtSecretConfigured(),
+    supabaseJwt: isSupabaseAccessTokenVerificationConfigured(),
+    supabaseJwtSecret: isSupabaseJwtSecretConfigured(),
     databaseConfigured: Boolean(process.env.DATABASE_URL?.trim())
   });
 });
