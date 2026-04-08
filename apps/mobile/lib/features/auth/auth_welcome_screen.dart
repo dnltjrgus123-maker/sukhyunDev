@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
+import "../../core/config/app_env.dart";
 import "../../core/config/auth_config.dart";
 import "providers/auth_providers.dart";
 
@@ -95,9 +96,13 @@ class AuthWelcomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 22),
                     Text(
-                      "Supabase 대시보드에서 Google·카카오·네이버 로그인 제공자와 리다이렉트 URL\n"
-                      "${AuthConfig.oauthRedirectUrl}\n"
-                      "을(를) 허용 목록에 추가하세요.",
+                      AppEnv.supabaseAuthCallbackUrl.isEmpty
+                          ? "dart-define에 SUPABASE_URL을 넣으면 카카오 콜백 안내가 표시됩니다."
+                          : "카카오·구글 개발자 콘솔의 Redirect URI:\n"
+                              "${AppEnv.supabaseAuthCallbackUrl}\n\n"
+                              "Supabase 대시보드 Authentication → URL Configuration 허용 목록:\n"
+                              "· ${AppEnv.supabaseAuthCallbackUrl}\n"
+                              "· ${AuthConfig.oauthRedirectUrl}",
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.outline,
                         height: 1.45,

@@ -49,6 +49,14 @@ class AppEnv {
   static bool get hasSupabaseConfig =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty && supabaseUrl.startsWith("http");
 
+  /// Kakao·Google OAuth 앱에 **Redirect URI**로 넣는 Supabase Auth 콜백.
+  /// 예: `https://eeukvvpakxrjtegfazvq.supabase.co/auth/v1/callback`
+  static String get supabaseAuthCallbackUrl {
+    if (!hasSupabaseConfig) return "";
+    final base = supabaseUrl.replaceAll(RegExp(r"/$"), "");
+    return "$base/auth/v1/callback";
+  }
+
   static String get flavorName {
     switch (flavor) {
       case AppFlavor.dev:
