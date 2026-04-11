@@ -33,6 +33,31 @@ class ApiClient {
     return headers;
   }
 
+  Future<Map<String, String>> _publicJsonHeaders() async => <String, String>{
+        "Content-Type": "application/json",
+      };
+
+  /// 서버 프록시 카카오 로그인(account_email 미사용) — [GET /auth/kakao/authorize-url]
+  Future<String> getKakaoAuthorizeUrl() async {
+    final response = await _client.get(
+      _uri("/auth/kakao/authorize-url"),
+      headers: await _publicJsonHeaders(),
+    );
+    _ensureSuccess(response, "카카오 로그인 URL을 가져오지 못했습니다");
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return body["url"] as String;
+  }
+
+  Future<SocialAuthResult> claimKakaoTicket(String ticket) async {
+    final response = await _client.post(
+      _uri("/auth/kakao/claim"),
+      headers: await _publicJsonHeaders(),
+      body: jsonEncode({"ticket": ticket}),
+    );
+    _ensureSuccess(response, "카카오 로그인 완료 처리 실패");
+    return SocialAuthResult.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
   Uri _uri(String path, [Map<String, String>? query]) {
     return Uri.parse("$baseUrl$path").replace(queryParameters: query);
   }

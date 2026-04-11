@@ -4,6 +4,7 @@ import express from "express";
 import { isSupabaseAccessTokenVerificationConfigured } from "./lib/supabase-auth.js";
 import { isSupabaseConfigured } from "./lib/supabase.js";
 import { apiRouter } from "./routes/api.js";
+import { kakaoOAuthRouter } from "./routes/kakao-oauth.routes.js";
 
 const authMode: "hybrid" | "strict" =
   process.env.AUTH_MODE === "strict"
@@ -35,6 +36,7 @@ app.use((req, res, next) => {
   }
   next();
 });
+app.use("/", kakaoOAuthRouter);
 app.use("/", apiRouter);
 
 const port = Number(process.env.PORT ?? 4000);

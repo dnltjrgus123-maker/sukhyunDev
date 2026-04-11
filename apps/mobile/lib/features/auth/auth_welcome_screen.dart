@@ -97,10 +97,14 @@ class AuthWelcomeScreen extends ConsumerWidget {
                     const SizedBox(height: 22),
                     Text(
                       AppEnv.supabaseAuthCallbackUrl.isEmpty
-                          ? "dart-define에 SUPABASE_URL을 넣으면 카카오 콜백 안내가 표시됩니다."
-                          : "카카오·구글 개발자 콘솔의 Redirect URI:\n"
+                          ? "dart-define에 SUPABASE_URL을 넣으면 OAuth 안내가 표시됩니다."
+                              : "Supabase는 이메일 없이 카카오 로그인을 문서상 허용하지만, 클라우드 Auth가 "
+                              "아직 account_email을 붙이면 KOE205가 날 수 있어 이 앱은 서버 프록시 경로를 씁니다. "
+                              "VM .env에 KAKAO_* 를 넣고 Redirect URI·OIDC·프로필 동의를 맞추세요. "
+                              "프록시 없이 signInWithOAuth만으로 되면 KAKAO_* 생략 가능.\n\n"
+                              "구글/네이버 — 카카오·구글 개발자 콘솔 Redirect URI:\n"
                               "${AppEnv.supabaseAuthCallbackUrl}\n\n"
-                              "Supabase 대시보드 Authentication → URL Configuration 허용 목록:\n"
+                              "Supabase URL 허용 목록:\n"
                               "· ${AppEnv.supabaseAuthCallbackUrl}\n"
                               "· ${AuthConfig.oauthRedirectUrl}",
                       style: theme.textTheme.bodySmall?.copyWith(
